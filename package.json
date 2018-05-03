@@ -1,0 +1,40 @@
+{
+  "name": "node-ssh-deploy",
+  "version": "0.1.4",
+  "description": "Deploy code to SSH",
+  "main": "dist/index.js",
+  "scripts": {
+    "watch": "nodemon -w src --exec \"npm run build && babel-node src\"",
+    "build": "npm run clean && babel src -D -d dist",
+    "clean": "rimraf dist",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "bin": {
+    "ssh-deploy": "dist/index.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/MindeVieras/node-ssh-deploy.git"
+  },
+  "keywords": [
+    "ssh",
+    "deploy"
+  ],
+  "author": "Minde Vieras",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/MindeVieras/node-ssh-deploy/issues"
+  },
+  "homepage": "https://github.com/MindeVieras/node-ssh-deploy#readme",
+  "dependencies": {
+    "commander": "^2.15.1",
+    "inquirer": "^5.2.0"
+  },
+  "devDependencies": {
+    "babel-cli": "^6.26.0",
+    "babel-preset-env": "^1.6.1",
+    "babel-preset-stage-0": "^6.24.1",
+    "nodemon": "^1.17.3",
+    "rimraf": "^2.6.2"
+  }
+}

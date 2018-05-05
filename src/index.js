@@ -9,8 +9,6 @@ import pkg from '../package.json'
 import { setup } from './setup'
 import { deploy } from './deploy'
 
-const configFilePath = path.resolve(process.cwd(), 'ssh-deploy.json')
-
 // Promt setup questions
 const setupQuestions = [
   {
@@ -30,9 +28,14 @@ const setupQuestions = [
     message : 'Enter user ...'
   },
   {
-    type : 'password',
-    name : 'pass',
-    message : 'Enter password ...'
+    type : 'input',
+    name : 'key_pair',
+    message : 'Enter ssh key pair path ...'
+  },
+  {
+    type : 'input',
+    name : 'dest_path',
+    message : 'Enter destination path ...'
   },
   {
     type : 'input',

@@ -9,4 +9,4 @@ package-lock.json
 
 dist
 
-ssh-deploy.json
+.ssh-deploy

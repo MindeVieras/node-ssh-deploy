@@ -4,6 +4,7 @@
   "description": "Deploy code to SSH",
   "main": "dist/index.js",
   "scripts": {
+    "start": "node dist",
     "watch": "nodemon -w src --exec \"npm run build && babel-node src\"",
     "build": "npm run clean && babel src -D -d dist",
     "clean": "rimraf dist",
@@ -27,8 +28,11 @@
   },
   "homepage": "https://github.com/MindeVieras/node-ssh-deploy#readme",
   "dependencies": {
+    "cli-spinner": "^0.2.8",
     "commander": "^2.15.1",
-    "inquirer": "^5.2.0"
+    "inquirer": "^5.2.0",
+    "ssh2": "^0.6.0",
+    "tar": "^4.4.2"
   },
   "devDependencies": {
     "babel-cli": "^6.26.0",

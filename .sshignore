@@ -1,0 +1,7 @@
+.ssh-deploy
+.git
+node_modules
+src
+
+.DS_Store
+.gitignore

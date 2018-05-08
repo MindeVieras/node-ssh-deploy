@@ -6,8 +6,10 @@ import { prompt } from 'inquirer'
 
 import pkg from '../package.json'
 
+import { ROOT_DIR } from './constants'
 import { setup } from './setup'
 import { deploy } from './deploy'
+import { ScrLog } from './helpers'
 
 // Promt setup questions
 const setupQuestions = [
@@ -45,6 +47,15 @@ const setupQuestions = [
   }
 ]
 
+// Ignore add question
+const ignoreAddQuestion = [
+  {
+    type : 'input',
+    name : 'file_path',
+    message : 'Enter file to ignore ...'
+  }
+]
+
 program
   .version(pkg.version)
   .description(pkg.description)
@@ -71,14 +82,14 @@ program
   .action( (env) => {
     deploy(env, (error, success) => {
       if (error)
-        console.log(error)
+        ScrLog.error(error)
       else
-        console.log(success)
+        ScrLog.success(success)
     })
   })
 
-// Assert that a VALID command is provided 
-if (!process.argv.slice(2).length || !/[sd]/.test(process.argv.slice(2))) {
+// Assert that a VALID command is provided
+if (!process.argv.slice(2).length || !/[sdf]/.test(process.argv.slice(2))) {
   program.outputHelp()
   process.exit()
 }

@@ -21,6 +21,17 @@ export function deploy(env, cb) {
 
   let config, archiveFilename, archiveFile
 
+
+  /**
+   * Run deploy in 4 steps.
+   *
+   * 1. Get project files.
+   * 2. Compress project files.
+   * 3. Upload project files to server.
+   * 4. Extract project files on server.
+   *
+   */
+
   // Start by getting project config
   getConfig()
 

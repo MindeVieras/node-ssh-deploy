@@ -2,6 +2,8 @@
 .git
 node_modules
 src
+.babelrc
+.eslint
 
 .DS_Store
 .gitignore

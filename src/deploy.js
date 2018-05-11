@@ -2,125 +2,117 @@
 import path from 'path'
 import fs from 'fs'
 import tar from 'tar'
-import { Spinner } from 'cli-spinner'
-import { exec } from 'child_process'
-import { Client } from 'ssh2'
+import Ora from 'ora'
+import clc from 'cli-color'
 
-import { ScrLog } from './helpers'
-import { ROOT_DIR, CONFIG_FILE, CONFIG_DIR } from './constants'
-import { files } from './files'
+import { ScrLog, getConfig, getProjectFiles, execLocal, execRemote } from './helpers'
+import { CONFIG_DIR } from './constants'
 
 export function deploy(env, cb) {
 
-  // Check if config file exists
-  fs.readFile(CONFIG_FILE, (error, data) => {
+  // Create spinner instance
+  const spinner = new Ora({
+    spinner: {
+      interval: 80,
+      frames: ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"]
+    },
+    color: 'cyan'
+  })
 
-    // If no config file, log message
-    if (error) {
-      cb('Please run \'ssh-deploy setup\' to setup project')
-    }
+  let config, archiveFilename, archiveFile
 
-    // If config file is found
-    else {
+  // Start by getting project config
+  getConfig()
 
-      // Parse json from file
-      const jsonData = JSON.parse(data.toString())
+    /**
+     * Check if environment exists in config.
+     *
+     * @param  {Object} `conf` data from config file
+     * @return {Function|Array} `files` from getProjectFiles()
+     */
+    .then( conf => {
+      // Check if environment exists in config
+      if(conf.hasOwnProperty(env)) {
 
-      // Check if environment exists in config file
-      if(jsonData.hasOwnProperty(env)) {
-
-        // Run deploy script
-        const archiveFilename = env + '.tgz'
-        const archiveFile = path.resolve(CONFIG_DIR, archiveFilename)
+        config = conf[env] // Set global config data
 
         // Get list of project files
-        files(ROOT_DIR, (error, project_files) => {
-          if (error) {
-            cb(error)
-          }
-          else {
-
-            // Make archive
-            const tarSpinner = new Spinner('archiving project files... %s ')
-            tarSpinner.setSpinnerString('|/-\\')
-            tarSpinner.start()
-
-            tar.c(
-
-              {
-                gzip: true,
-                file: archiveFile
-              },
-              project_files
-
-            ).then(() => {
-              ScrLog.success('OK')
-              tarSpinner.stop()
-
-              const { host, user, key_pair, dest_path } = jsonData[env]
-
-              // upload archive to server with scp
-              const scpSpinner = new Spinner('copying archive to server... %s ')
-              scpSpinner.setSpinnerString('|/-\\')
-              scpSpinner.start()
-              const scpCommand = 'scp -i '+key_pair+' '+archiveFile+' '+user+'@'+host+':'+dest_path
-              exec(scpCommand, (error, stdout, stderr) => {
-                ScrLog.success('OK')
-                scpSpinner.stop()
-
-                if (error) {
-                  cb('Local error: '+error)
-                }
-                if (stderr) {
-                  cb('Server error: '+stderr)
-                }
-                else {
-                  // unarchive project on server
-                  // Connsect to server
-                  var conn = new Client()
-                  conn.on('ready', () => {
-
-                    const archiveOnServer = dest_path+'/'+archiveFilename
-                    const unarchiveCommand = 'tar -xzf '+archiveOnServer+' --directory '+dest_path
-
-                    const untarSpinner = new Spinner('unarchiving project files on server... %s ')
-                    untarSpinner.setSpinnerString('|/-\\')
-                    untarSpinner.start()
-
-                    conn.exec(unarchiveCommand, (err, stream) => {
-                      ScrLog.success('OK')
-                      untarSpinner.stop()
-                      if (err) throw err
-                      stream.on('close', (code, signal) => { // On ssh connnection close
-                        cb(null, 'Deploy complete')
-                        conn.end()
-                      }).on('data', data => { // Success ssh command response
-                        console.log('STDOUT: ' + data)
-                      }).stderr.on('data', data => { // Handle server error
-                        cb('Server error: ' + data)
-                      })
-                    })
-                  }).on('error', err => { // Handle ssh connection error
-                    cb('Cannot connect to '+host+' server, check ssh config')
-                  }).connect({
-                    host,
-                    port: 22,
-                    username: user,
-                    privateKey: fs.readFileSync(key_pair)
-                  })
-                }
-              })
-            })
-
-          }
-        })
-
+        return getProjectFiles()
       }
+      // If environment not found throw error
+      else
+        throw `Environment '${env}' not found`
+    })
 
-      // If environment not found in confog file, log message
-      else {
-        cb('Environment \''+ env +'\' not found')
+
+    /**
+     * Compress project files.
+     *
+     * @param  {Array} `files` from getProjectFiles()
+     * @return {Function} tar()
+     */
+    .then( files => {
+
+      // Make archive
+      spinner.start(`Compressing project files`) // Start archive spinner
+
+      // Set new globals
+      archiveFilename = env + '.tgz'
+      archiveFile = path.resolve(CONFIG_DIR, archiveFilename)
+
+      const tarConfig = {
+        gzip: true,
+        file: archiveFile
       }
-    }
-  })
+      return tar.c(tarConfig, files)
+    })
+
+
+    /**
+     * Upload project files to server.
+     *
+     * @return {Function} execLocal()
+     */
+    .then( () => {
+      // Stop archive spinner
+      spinner.succeed(`Compressing project files  | ${clc.green(`Success`)}`)
+
+      // upload archive to server with scp
+      spinner.start(`Copying archive to server`) // Start scp spinner
+      return execLocal(`scp -i ${config.key_pair} ${archiveFile} ${config.user}@${config.host}:${config.dest_path}`)
+    })
+
+
+    /**
+     * Extract project files on server.
+     *
+     * @return {Function} execRemote()
+     */
+    .then( () => {
+      // Stop scp spinner
+      spinner.succeed(`Copying archive to server  | ${clc.green(`Success`)}`)
+
+      // unarchive project on server
+      spinner.start(`Extracting files on server`) // Start extract files spinner
+      const archiveOnServer = path.join(config.dest_path, archiveFilename)
+      const unarchiveCommand = `tar -xzf ${archiveOnServer} --directory ${config.dest_path}`
+      return execRemote(config, unarchiveCommand)
+    })
+    .then( () => {
+      // Stop extract files spinner
+      spinner.succeed(`Extracting files on server | ${clc.green(`Success`)}`)
+
+      cb(null, 'Deploy complete')
+    })
+
+    /**
+     * Catch errors.
+     * Stop spinner with fail()
+     *
+     * @param  {String} `err`
+     */
+    .catch( err => {
+      spinner.fail(clc.red(err))
+      return
+    })
 }

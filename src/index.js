@@ -47,15 +47,6 @@ const setupQuestions = [
   }
 ]
 
-// Ignore add question
-const ignoreAddQuestion = [
-  {
-    type : 'input',
-    name : 'file_path',
-    message : 'Enter file to ignore ...'
-  }
-]
-
 program
   .version(pkg.version)
   .description(pkg.description)
@@ -89,7 +80,7 @@ program
   })
 
 // Assert that a VALID command is provided
-if (!process.argv.slice(2).length || !/[sdf]/.test(process.argv.slice(2))) {
+if (!process.argv.slice(2).length || !/[sd]/.test(process.argv.slice(2))) {
   program.outputHelp()
   process.exit()
 }

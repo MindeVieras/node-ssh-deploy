@@ -3,13 +3,16 @@
 import path from 'path'
 import program from 'commander'
 import { prompt } from 'inquirer'
+import updateNotifier from 'update-notifier'
 
 import pkg from '../package.json'
-
 import { ROOT_DIR } from './constants'
 import { setup } from './setup'
 import { deploy } from './deploy'
 import { ScrLog } from './helpers'
+
+// Check for new version
+updateNotifier({pkg}).notify()
 
 // Promt setup questions
 const setupQuestions = [

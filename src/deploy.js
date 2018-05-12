@@ -19,8 +19,6 @@ export function deploy(env, cb) {
     color: 'cyan'
   })
 
-  let config, archiveFilename, archiveFile
-
 
   /**
    * Run deploy in 4 steps.
@@ -31,6 +29,8 @@ export function deploy(env, cb) {
    * 4. Extract project files on server.
    *
    */
+
+  let config, archiveFilename, archiveFile
 
   // Start by getting project config
   getConfig()
@@ -122,7 +122,7 @@ export function deploy(env, cb) {
      * @param  {String} `err`
      */
     .catch( err => {
-      spinner.fail(clc.red(err))
-      return
+      spinner.stop()
+      cb(err)
     })
 }

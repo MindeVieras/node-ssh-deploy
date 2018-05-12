@@ -3,7 +3,12 @@
 node_modules
 src
 .babelrc
-.eslint
+.eslintrc
+
+package-lock.json
 
 .DS_Store
 .gitignore
+.sshignore
+
+README.md

@@ -3,6 +3,7 @@ import fs from 'fs'
 import { exec } from 'child_process'
 import { Client } from 'ssh2'
 import clc from 'cli-color'
+import ignore from 'ignore'
 import recursive from 'recursive-readdir'
 
 import { ROOT_DIR, CONFIG_FILE, CONFIG_IGNORE, GIT_IGNORE, COMMANDS_FILE } from './constants'
@@ -61,15 +62,18 @@ export function getProjectFiles() {
     // Check if ignore file exists
     getIgnores()
       .then( ignores => {
-        recursive(ROOT_DIR, ignores, (err, files) => {
+        recursive(ROOT_DIR, (err, files) => {
           if (err)
             reject(err)
 
           else {
-            let formatedFilesList = files.map(file => {
-              return file.substr(ROOT_DIR.length + 1) // +1 removes seperator on start
-            })
-            resolve(formatedFilesList)
+            const ig = ignore().add(ignores)
+            files = files.map(file => {
+              // substring root path and removes seperator
+              return file.substr(ROOT_DIR.length + 1)
+            }).filter(ig.createFilter()) // filter ignores
+
+            resolve(files)
           }
         })
       })
@@ -99,7 +103,11 @@ export function getIgnores() {
             resolve(list)
           }
           else {
-            resolve(parseIgnoreFile(data))
+            // git ignores
+            list = parseIgnoreFile(data)
+            // add .git directory to list
+            list.push('.git')
+            resolve(list)
           }
         })
       }

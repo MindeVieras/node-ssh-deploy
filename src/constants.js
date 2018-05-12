@@ -2,6 +2,7 @@
 import path from 'path'
 
 export const ROOT_DIR          = process.cwd()
+export const GIT_IGNORE        = path.resolve(ROOT_DIR, '.gitignore')
 
 export const CONFIG_DIRNAME    = '.ssh-deploy'
 export const CONFIG_FILENAME   = 'ssh-config.json'

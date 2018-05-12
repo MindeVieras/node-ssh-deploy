@@ -5,7 +5,7 @@ import { Client } from 'ssh2'
 import clc from 'cli-color'
 import recursive from 'recursive-readdir'
 
-import { ROOT_DIR, CONFIG_FILE, CONFIG_IGNORE, COMMANDS_FILE } from './constants'
+import { ROOT_DIR, CONFIG_FILE, CONFIG_IGNORE, GIT_IGNORE, COMMANDS_FILE } from './constants'
 
 // Screen log Class
 export class ScrLog {
@@ -81,22 +81,38 @@ export function getProjectFiles() {
 
 /**
  * Gets all ignored project files function.
- * It reads ignore file
+ * It reads .sshignore file and
+ * if it does not exists then check for .gitignore
  *
- * @return {Promise|Array} Empty array if no config file
+ * @return {Promise|Array} Empty array if no ignore files
  */
 export function getIgnores() {
   return new Promise( resolve => {
+    let list = []
     // Check if ignore file exists
     fs.readFile(CONFIG_IGNORE, (err, data) => {
-      let list = []
-      if (!err)
-        list = data.toString().split('\n').filter( item => item != '' )
-
-      // Always return array even if ignore not exists
-      resolve(list)
+      if (err) {
+        // Read .gitignore file
+        fs.readFile(GIT_IGNORE, (err, data) => {
+          if (err) {
+            // Return array if ignores not exists
+            resolve(list)
+          }
+          else {
+            resolve(parseIgnoreFile(data))
+          }
+        })
+      }
+      else {
+        resolve(parseIgnoreFile(data))
+      }
     })
   })
+}
+
+function parseIgnoreFile(data) {
+  // Make array of data and remove empty lines
+  return data.toString().split('\n').filter( item => item != '' )
 }
 
 /**

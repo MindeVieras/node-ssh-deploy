@@ -63,7 +63,6 @@ export function deploy(env, cb) {
      * @return {Function} tar()
      */
     .then( files => {
-
       // Make archive
       spinner.start(`Compressing project files`) // Start archive spinner
 
@@ -106,7 +105,7 @@ export function deploy(env, cb) {
       // unarchive project on server
       spinner.start(`Extracting files on server`) // Start extract files spinner
       const archiveOnServer = path.join(config.dest_path, archiveFilename)
-      const unarchiveCommand = `tar -xzf ${archiveOnServer} --directory ${config.dest_path}`
+      const unarchiveCommand = `tar -xzf ${archiveOnServer} --directory ${config.dest_path} --warning=no-timestamp`
       return execRemote(config, unarchiveCommand)
     })
     .then( () => {
